@@ -164,7 +164,7 @@ func newConsumerGroup(conf *ConsumerGroupConf) sarama.ConsumerGroup {
 	config := sarama.NewConfig()
 	config.Consumer.Offsets.Initial = conf.Initial              // sarama.OffsetOldest
 	config.Consumer.Offsets.AutoCommit.Enable = conf.AutoCommit // false
-	config.Consumer.Offsets.AutoCommit.Interval = 200 * time.Millisecond
+	config.Consumer.Offsets.AutoCommit.Interval = conf.Interval
 	config.Consumer.Return.Errors = conf.ReturnErrors // true
 	if err := config.Validate(); err != nil {
 		panic(err)
