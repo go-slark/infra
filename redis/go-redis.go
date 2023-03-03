@@ -4,14 +4,10 @@ import (
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/pkg/errors"
-	"sync"
 	"time"
 )
 
-var (
-	redisClients = make(map[string]*redis.Client)
-	redisOnce    sync.Once
-)
+var redisClient *redis.Client
 
 type RedisClientConfig struct {
 	Alias              string `json:"alias"`
@@ -31,38 +27,25 @@ type RedisClientConfig struct {
 	MaxRetryBackoff    int    `json:"max_retry_backoff"`
 }
 
-func InitRedisClients(configs []*RedisClientConfig) error {
-	redisOnce.Do(func() {
-		for _, c := range configs {
-			if _, ok := redisClients[c.Alias]; ok {
-				panic(errors.New("duplicate redis client: " + c.Alias))
-			}
-			client, err := createRedisClient(c)
-			if err != nil {
-				panic(errors.New(fmt.Sprintf("redis client %+v error %v", c, err)))
-			}
-			redisClients[c.Alias] = client
-		}
-	})
+func InitRedisClient(c *RedisClientConfig) {
+	client, err := createRedisClient(c)
+	if err != nil {
+		panic(errors.New(fmt.Sprintf("redis client %+v error %v", c, err)))
+	}
+	redisClient = client
 
-	return nil
 }
 
-func AppendRedisClients(configs []*RedisClientConfig) {
-	if len(redisClients) == 0 {
-		_ = InitRedisClients(configs)
+func AppendRedisClients(config *RedisClientConfig) {
+	if redisClient == nil {
+		InitRedisClient(config)
 	}
 
-	for _, c := range configs {
-		if _, ok := redisClients[c.Alias]; ok {
-			continue
-		}
-		client, err := createRedisClient(c)
-		if err != nil {
-			panic(errors.New(fmt.Sprintf("redis client %+v error %v", c, err)))
-		}
-		redisClients[c.Alias] = client
+	client, err := createRedisClient(config)
+	if err != nil {
+		panic(errors.New(fmt.Sprintf("redis client %+v error %v", config, err)))
 	}
+	redisClient = client
 }
 
 func createRedisClient(c *RedisClientConfig) (*redis.Client, error) {
@@ -107,21 +90,19 @@ func createRedisClient(c *RedisClientConfig) (*redis.Client, error) {
 	if c.MaxRetryBackoff != 0 {
 		options.MaxRetryBackoff = time.Duration(c.MaxRetryBackoff) * time.Millisecond
 	}
-	redisClient := redis.NewClient(options)
-	_, err := redisClient.Ping().Result()
-	return redisClient, err
+	client := redis.NewClient(options)
+	_, err := client.Ping().Result()
+	return client, err
 }
 
 func GetRedisClient(alias string) *redis.Client {
-	return redisClients[alias]
+	return redisClient
 }
 
-func CloseRedisClients() {
-	for _, client := range redisClients {
-		if client == nil {
-			continue
-		}
-
-		_ = client.Close()
+func CloseRedisClients() error {
+	if redisClient == nil {
+		return nil
 	}
+
+	return redisClient.Close()
 }

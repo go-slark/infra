@@ -3,9 +3,9 @@ package kafka
 import (
 	"context"
 	"github.com/Shopify/sarama"
+	"github.com/go-slark/slark/logger"
 	"github.com/go-slark/slark/pkg"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -23,12 +23,14 @@ type ProducerConf struct {
 }
 
 type ConsumerGroupConf struct {
-	Brokers      []string `mapstructure:"brokers"`
-	GroupID      string   `mapstructure:"group_id"`
-	Topics       []string `mapstructure:"topics"`
-	Initial      int64    `mapstructure:"initial"`
-	CommitEnable bool     `mapstructure:"commit_enable"`
-	ReturnErrors bool     `mapstructure:"return_errors"`
+	Brokers      []string      `mapstructure:"brokers"`
+	GroupID      string        `mapstructure:"group_id"`
+	Topics       []string      `mapstructure:"topics"`
+	Initial      int64         `mapstructure:"initial"`
+	ReturnErrors bool          `mapstructure:"return_errors"`
+	AutoCommit   bool          `mapstructure:"auto_commit"`
+	Interval     time.Duration `mapstructure:"interval"`
+	WorkerNum    uint          `mapstructure:"worker_num"`
 }
 
 type KafkaConf struct {
@@ -146,6 +148,7 @@ type KafkaConsumerGroup struct {
 	Topics []string
 	context.Context
 	context.CancelFunc
+	logger.Logger
 }
 
 func InitKafkaConsumer(conf *ConsumerGroupConf) *KafkaConsumerGroup {
@@ -159,9 +162,10 @@ func InitKafkaConsumer(conf *ConsumerGroupConf) *KafkaConsumerGroup {
 
 func newConsumerGroup(conf *ConsumerGroupConf) sarama.ConsumerGroup {
 	config := sarama.NewConfig()
-	config.Consumer.Offsets.Initial = conf.Initial                // sarama.OffsetOldest
-	config.Consumer.Offsets.AutoCommit.Enable = conf.CommitEnable // false
-	config.Consumer.Return.Errors = conf.ReturnErrors             // true
+	config.Consumer.Offsets.Initial = conf.Initial              // sarama.OffsetOldest
+	config.Consumer.Offsets.AutoCommit.Enable = conf.AutoCommit // false
+	config.Consumer.Offsets.AutoCommit.Interval = 200 * time.Millisecond
+	config.Consumer.Return.Errors = conf.ReturnErrors // true
 	if err := config.Validate(); err != nil {
 		panic(err)
 	}
@@ -178,7 +182,7 @@ func (kc *KafkaConsumerGroup) Consume() {
 	for {
 		err := kc.ConsumerGroup.Consume(kc.Context, kc.Topics, kc.ConsumerGroupHandler)
 		if err != nil {
-			logrus.WithContext(kc.Context).WithError(err).Warn("consumer group consume fail")
+			kc.Log(kc.Context, logger.WarnLevel, map[string]interface{}{"error": err}, "consumer group consume fail")
 		}
 		if kc.Context.Err() != nil {
 			return

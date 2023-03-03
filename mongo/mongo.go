@@ -8,14 +8,12 @@ import (
 	"go.mongodb.org/mongo-driver/event"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"sync"
 	"time"
 )
 
 var (
-	client  = make(map[string]*mongo.Client)
-	mongoDB = make(map[string]*mongo.Database)
-	once    sync.Once
+	client  *mongo.Client
+	mongoDB *mongo.Database
 )
 
 type MongoConf struct {
@@ -66,37 +64,26 @@ func createMongoClient(c *MongoConf) (*mongo.Client, error) {
 	return cli, nil
 }
 
-func InitMongoDB(conf []*MongoConf) {
-	once.Do(func() {
-		for _, c := range conf {
-			if _, ok := client[c.Alias]; ok {
-				panic(errors.New("duplicate mongo client: " + c.Alias))
-			}
-
-			if _, ok := mongoDB[c.Alias]; ok {
-				panic(errors.New("duplicate mongo db: " + c.Alias))
-			}
-
-			cli, err := createMongoClient(c)
-			if err != nil {
-				panic(errors.New(fmt.Sprintf("redis pool %+v error %v", c, err)))
-			}
-			client[c.Alias] = cli
-			mongoDB[c.Alias] = cli.Database(c.DateBase)
-		}
-	})
-}
-
-func NewMongoCollection(alias, coll string) *mongo.Collection {
-	return mongoDB[alias].Collection(coll)
-}
-
-func GetMongoDB(alias string) *mongo.Database {
-	return mongoDB[alias]
-}
-
-func CloseMongo() {
-	for _, cli := range client {
-		_ = cli.Disconnect(context.TODO())
+func InitMongoDB(c *MongoConf) {
+	cli, err := createMongoClient(c)
+	if err != nil {
+		panic(errors.New(fmt.Sprintf("use %+v create mongo client error %+v", c, err)))
 	}
+	client = cli
+	mongoDB = cli.Database(c.DateBase)
+}
+
+func NewMongoCollection(coll string) *mongo.Collection {
+	return mongoDB.Collection(coll)
+}
+
+func GetMongoDB() *mongo.Database {
+	return mongoDB
+}
+
+func CloseMongo() error {
+	if client == nil {
+		return nil
+	}
+	return client.Disconnect(context.TODO())
 }

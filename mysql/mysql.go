@@ -8,14 +8,10 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
-	"sync"
 	"time"
 )
 
-var (
-	mysqlPools = make(map[string]*gorm.DB)
-	once       sync.Once
-)
+var dbInst *gorm.DB
 
 type MySqlConfig struct {
 	Alias         string        `json:"alias"`
@@ -29,22 +25,15 @@ type MySqlConfig struct {
 	xlogger.Logger
 }
 
-func InitMySql(configs []*MySqlConfig) {
-	once.Do(func() {
-		for _, c := range configs {
-			if _, ok := mysqlPools[c.Alias]; ok {
-				panic(errors.New("duplicate mysql pool: " + c.Alias))
-			}
-			p, err := createNewMySqlPool(c)
-			if err != nil {
-				panic(errors.New(fmt.Sprintf("mysql pool %+v error %v", c, err)))
-			}
-			mysqlPools[c.Alias] = p
-		}
-	})
+func InitMySql(c *MySqlConfig) {
+	db, err := createDB(c)
+	if err != nil {
+		panic(errors.New(fmt.Sprintf("use %+v create mysql error %+v", c, err)))
+	}
+	dbInst = db
 }
 
-func createNewMySqlPool(c *MySqlConfig) (*gorm.DB, error) {
+func createDB(c *MySqlConfig) (*gorm.DB, error) {
 	var l logger.Interface
 	if c.CustomizedLog {
 		l = newCustomizedLogger(WithLogLevel(logger.LogLevel(c.LogMode)), WithLogger(c.Logger))
@@ -85,19 +74,18 @@ func createNewMySqlPool(c *MySqlConfig) (*gorm.DB, error) {
 	return db, nil
 }
 
-func GetMySql(alias string) *gorm.DB {
-	return mysqlPools[alias]
+func GetDB() *gorm.DB {
+	return dbInst
 }
 
-func CloseMysql() {
-	for _, db := range mysqlPools {
-		if db == nil {
-			continue
-		}
-		sqlDB, err := db.DB()
-		if err != nil {
-			continue
-		}
-		_ = sqlDB.Close()
+func Close() {
+	if dbInst == nil {
+		return
 	}
+
+	sqlDB, err := dbInst.DB()
+	if err != nil {
+		return
+	}
+	_ = sqlDB.Close()
 }
