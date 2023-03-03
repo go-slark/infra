@@ -10,7 +10,6 @@ import (
 var redisClient *redis.Client
 
 type RedisClientConfig struct {
-	Alias              string `json:"alias"`
 	Address            string `json:"address"`
 	Password           string `json:"password"`
 	DB                 int    `json:"db"`

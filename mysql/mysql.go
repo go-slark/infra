@@ -14,7 +14,6 @@ import (
 var dbInst *gorm.DB
 
 type MySqlConfig struct {
-	Alias         string        `json:"alias"`
 	Address       string        `json:"address"`
 	MaxIdleConn   int           `json:"max_idle_conn"`
 	MaxOpenConn   int           `json:"max_open_conn"`

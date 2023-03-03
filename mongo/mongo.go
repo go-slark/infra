@@ -17,7 +17,6 @@ var (
 )
 
 type MongoConf struct {
-	Alias       string `json:"alias"`
 	Url         string `json:"url"`
 	DateBase    string `json:"data_base"`
 	Timeout     int    `json:"timeout"`
