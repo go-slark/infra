@@ -185,6 +185,7 @@ func (kc *KafkaConsumerGroup) Consume() {
 			kc.Log(kc.Context, logger.WarnLevel, map[string]interface{}{"error": err}, "consumer group consume fail")
 		}
 		if kc.Context.Err() != nil {
+			kc.Log(kc.Context, logger.ErrorLevel, map[string]interface{}{"error": kc.Context.Err()}, "consumer group exit")
 			return
 		}
 		time.Sleep(time.Second)
