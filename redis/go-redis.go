@@ -94,7 +94,7 @@ func createRedisClient(c *RedisClientConfig) (*redis.Client, error) {
 	return client, err
 }
 
-func GetRedisClient(alias string) *redis.Client {
+func GetRedisClient() *redis.Client {
 	return redisClient
 }
 
