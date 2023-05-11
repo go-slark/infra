@@ -91,9 +91,6 @@ func (kp *KafkaProducer) AsyncSend(ctx context.Context, topic, key string, msg [
 
 	case err := <-kp.AsyncProducer.Errors():
 		return errors.WithStack(err)
-
-	default:
-
 	}
 	return nil
 }
