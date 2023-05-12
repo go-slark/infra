@@ -87,12 +87,6 @@ func (kp *KafkaProducer) AsyncSend(ctx context.Context, topic, key string, msg [
 	}
 
 	kp.AsyncProducer.Input() <- pm
-	select {
-	case <-kp.AsyncProducer.Successes():
-
-	case err := <-kp.AsyncProducer.Errors():
-		return errors.WithStack(err)
-	}
 	return nil
 }
 
@@ -137,13 +131,20 @@ func newAsyncProducer(conf *ProducerConf) sarama.AsyncProducer {
 		panic(err)
 	}
 
-	var msg *sarama.ProducerMessage
+	var (
+		msg *sarama.ProducerMessage
+		e   *sarama.ProducerError
+	)
 	go func(ap sarama.AsyncProducer) {
 		select {
 		case msg = <-ap.Successes():
-			fmt.Printf("sarama async produce msg succ, msg:%+v\n", msg)
-		case err = <-ap.Errors():
-			fmt.Printf("sarama async produce msg fail, err:%+v\n", err)
+			if msg != nil {
+				fmt.Printf("sarama async produce msg succ, topic:%s, key:%s, value:%s\n", msg.Topic, msg.Key, msg.Value)
+			}
+		case e = <-ap.Errors():
+			if e != nil && e.Msg != nil {
+				fmt.Printf("sarama async produce msg fail, topic:%s, key:%s, value:%s, err:%+v\n", e.Msg.Topic, e.Msg.Key, e.Msg.Value, e.Err)
+			}
 		}
 	}(producer)
 	return producer
