@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"context"
+	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/go-slark/slark/logger"
 	"github.com/go-slark/slark/pkg"
@@ -125,8 +126,8 @@ func newAsyncProducer(conf *ProducerConf) sarama.AsyncProducer {
 	config.Producer.RequiredAcks = sarama.RequiredAcks(conf.Ack) // WaitForAll
 	config.Producer.Partitioner = sarama.NewHashPartitioner
 	config.Producer.Retry.Max = conf.Retry
-	config.Producer.Return.Successes = conf.ReturnSuccess // true
-	config.Producer.Return.Errors = conf.ReturnErrors     // true
+	config.Producer.Return.Successes = conf.ReturnSuccess // true / false
+	config.Producer.Return.Errors = conf.ReturnErrors     // true / false
 	if err := config.Validate(); err != nil {
 		panic(err)
 	}
@@ -136,6 +137,15 @@ func newAsyncProducer(conf *ProducerConf) sarama.AsyncProducer {
 		panic(err)
 	}
 
+	var msg *sarama.ProducerMessage
+	go func(ap sarama.AsyncProducer) {
+		select {
+		case msg = <-ap.Successes():
+			fmt.Printf("sarama async produce msg succ, msg:%+v\n", msg)
+		case err = <-ap.Errors():
+			fmt.Printf("sarama async produce msg fail, err:%+v\n", err)
+		}
+	}(producer)
 	return producer
 }
 
