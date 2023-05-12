@@ -136,14 +136,16 @@ func newAsyncProducer(conf *ProducerConf) sarama.AsyncProducer {
 		e   *sarama.ProducerError
 	)
 	go func(ap sarama.AsyncProducer) {
-		select {
-		case msg = <-ap.Successes():
-			if msg != nil {
-				fmt.Printf("sarama async produce msg succ, topic:%s, key:%s, value:%s\n", msg.Topic, msg.Key, msg.Value)
-			}
-		case e = <-ap.Errors():
-			if e != nil && e.Msg != nil {
-				fmt.Printf("sarama async produce msg fail, topic:%s, key:%s, value:%s, err:%+v\n", e.Msg.Topic, e.Msg.Key, e.Msg.Value, e.Err)
+		for {
+			select {
+			case msg = <-ap.Successes():
+				if msg != nil {
+					fmt.Printf("sarama async produce msg succ, topic:%s, key:%s, value:%s\n", msg.Topic, msg.Key, msg.Value)
+				}
+			case e = <-ap.Errors():
+				if e != nil && e.Msg != nil {
+					fmt.Printf("sarama async produce msg fail, topic:%s, key:%s, value:%s, err:%+v\n", e.Msg.Topic, e.Msg.Key, e.Msg.Value, e.Err)
+				}
 			}
 		}
 	}(producer)
