@@ -102,8 +102,8 @@ func newSyncProducer(conf *ProducerConf) sarama.SyncProducer {
 	config.Producer.RequiredAcks = sarama.RequiredAcks(conf.Ack) // WaitForAll
 	config.Producer.Partitioner = sarama.NewHashPartitioner
 	config.Producer.Retry.Max = conf.Retry
-	config.Producer.Return.Successes = conf.ReturnSuccess // true
-	config.Producer.Return.Errors = conf.ReturnErrors     // true
+	config.Producer.Return.Successes = true // true
+	//config.Producer.Return.Errors = true     // default true
 	if err := config.Validate(); err != nil {
 		panic(err)
 	}
