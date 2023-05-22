@@ -14,13 +14,13 @@ import (
 var dbInst *gorm.DB
 
 type MySqlConfig struct {
-	Address       string        `json:"address"`
-	MaxIdleConn   int           `json:"max_idle_conn"`
-	MaxOpenConn   int           `json:"max_open_conn"`
-	MaxLifeTime   time.Duration `json:"max_life_time"`
-	MaxIdleTime   time.Duration `json:"max_idle_time"`
-	LogMode       int           `json:"log_mode"` //默认warn
-	CustomizedLog bool          `json:"customized_log"`
+	Address       string `json:"address"`
+	MaxIdleConn   int    `json:"max_idle_conn"`
+	MaxOpenConn   int    `json:"max_open_conn"`
+	MaxLifeTime   int    `json:"max_life_time"`
+	MaxIdleTime   int    `json:"max_idle_time"`
+	LogMode       int    `json:"log_mode"` //默认warn
+	CustomizedLog bool   `json:"customized_log"`
 	xlogger.Logger
 }
 
@@ -56,10 +56,10 @@ func createDB(c *MySqlConfig) (*gorm.DB, error) {
 	sqlDB.SetMaxIdleConns(c.MaxIdleConn)
 	sqlDB.SetMaxOpenConns(c.MaxOpenConn)
 	if c.MaxLifeTime != 0 {
-		sqlDB.SetConnMaxLifetime(c.MaxLifeTime)
+		sqlDB.SetConnMaxLifetime(time.Duration(c.MaxLifeTime) * time.Second)
 	}
 	if c.MaxIdleTime != 0 {
-		sqlDB.SetConnMaxIdleTime(c.MaxIdleTime)
+		sqlDB.SetConnMaxIdleTime(time.Duration(c.MaxIdleTime) * time.Second)
 	}
 
 	if err = sqlDB.Ping(); err != nil {
