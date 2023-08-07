@@ -4,9 +4,11 @@ go 1.19
 
 require (
 	github.com/Shopify/sarama v1.38.1
+	github.com/bwmarrin/snowflake v0.3.0
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-slark/slark v1.3.6-0.20230427090940-aea511fdca97
 	github.com/pkg/errors v0.9.1
+	github.com/rs/xid v1.5.0
 	go.mongodb.org/mongo-driver v1.11.1
 	gorm.io/driver/mysql v1.4.5
 	gorm.io/gorm v1.24.3
