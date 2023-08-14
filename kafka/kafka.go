@@ -45,7 +45,7 @@ func (kp *KafkaProducer) Close() {
 }
 
 func (kp *KafkaProducer) SyncSend(ctx context.Context, topic, key string, msg []byte) error {
-	traceID, ok := ctx.Value(utils.TraceID).(string)
+	traceID, ok := ctx.Value(utils.RayID).(string)
 	if !ok {
 		traceID = utils.BuildRequestID()
 	}
@@ -55,7 +55,7 @@ func (kp *KafkaProducer) SyncSend(ctx context.Context, topic, key string, msg []
 		Key:   sarama.StringEncoder(key),
 		Headers: []sarama.RecordHeader{
 			{
-				Key:   []byte(utils.TraceID),
+				Key:   []byte(utils.RayID),
 				Value: []byte(traceID),
 			},
 		},
@@ -70,7 +70,7 @@ func (kp *KafkaProducer) SyncSend(ctx context.Context, topic, key string, msg []
 }
 
 func (kp *KafkaProducer) AsyncSend(ctx context.Context, topic, key string, msg []byte) error {
-	traceID, ok := ctx.Value(utils.TraceID).(string)
+	traceID, ok := ctx.Value(utils.RayID).(string)
 	if !ok {
 		traceID = utils.BuildRequestID()
 	}
@@ -80,7 +80,7 @@ func (kp *KafkaProducer) AsyncSend(ctx context.Context, topic, key string, msg [
 		Key:   sarama.StringEncoder(key),
 		Headers: []sarama.RecordHeader{
 			{
-				Key:   []byte(utils.TraceID),
+				Key:   []byte(utils.RayID),
 				Value: []byte(traceID),
 			},
 		},
