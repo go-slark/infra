@@ -2,7 +2,6 @@ package kafka
 
 import (
 	"context"
-	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/go-slark/slark/logger"
 	"github.com/go-slark/slark/pkg"
@@ -138,7 +137,7 @@ func newAsyncProducer(conf *ProducerConf) sarama.AsyncProducer {
 	go func(ap sarama.AsyncProducer) {
 		for msg = range ap.Successes() {
 			if msg != nil {
-				fmt.Printf("sarama async produce msg succ, topic:%s, key:%s, value:%s\n", msg.Topic, msg.Key, msg.Value)
+				logger.Log(context.TODO(), logger.DebugLevel, map[string]interface{}{"topic": msg.Topic, "key": msg.Key, "value": msg.Value}, "kafka async produce msg succ")
 			}
 		}
 	}(producer)
@@ -150,9 +149,9 @@ func newAsyncProducer(conf *ProducerConf) sarama.AsyncProducer {
 			}
 
 			if e.Msg != nil {
-				fmt.Printf("sarama async produce msg fail, topic:%s, key:%s, value:%s, err:%+v\n", e.Msg.Topic, e.Msg.Key, e.Msg.Value, e.Err)
+				logger.Log(context.TODO(), logger.ErrorLevel, map[string]interface{}{"error": e.Err, "topic": e.Msg.Topic, "key": e.Msg.Key, "value": e.Msg.Value}, "kafka async produce msg fail")
 			} else {
-				fmt.Printf("sarama async produce msg fail, err:%+v\n", e.Err)
+				logger.Log(context.TODO(), logger.ErrorLevel, map[string]interface{}{"error": e.Err}, "kafka async produce msg fail")
 			}
 		}
 	}(producer)

@@ -1,9 +1,10 @@
 package redis
 
 import (
+	"context"
 	"fmt"
-	"github.com/go-redis/redis"
 	"github.com/pkg/errors"
+	"github.com/redis/go-redis/v9"
 	"time"
 )
 
@@ -49,11 +50,10 @@ func AppendRedisClients(config *RedisClientConfig) {
 
 func createRedisClient(c *RedisClientConfig) (*redis.Client, error) {
 	options := &redis.Options{
-		Network:     "tcp",
-		Addr:        c.Address,
-		Password:    c.Password,
-		DB:          c.DB,
-		IdleTimeout: time.Duration(c.IdleTimeout) * time.Second,
+		Network:  "tcp",
+		Addr:     c.Address,
+		Password: c.Password,
+		DB:       c.DB,
 	}
 
 	if c.DialTimeout != 0 {
@@ -65,14 +65,8 @@ func createRedisClient(c *RedisClientConfig) (*redis.Client, error) {
 	if c.WriteTimeout != 0 {
 		options.WriteTimeout = time.Duration(c.WriteTimeout) * time.Second
 	}
-	if c.IdleTimeout != 0 {
-		options.IdleTimeout = time.Duration(c.IdleTimeout) * time.Minute
-	}
 	if c.PoolTimeout != 0 {
 		options.PoolTimeout = time.Duration(c.PoolTimeout) * time.Second
-	}
-	if c.MaxConnAge != 0 {
-		options.MaxConnAge = time.Duration(c.MaxConnAge) * time.Second
 	}
 	if c.MaxRetry != 0 {
 		options.MaxRetries = c.MaxRetry
@@ -83,14 +77,11 @@ func createRedisClient(c *RedisClientConfig) (*redis.Client, error) {
 	if c.MinIdleConns != 0 {
 		options.MinIdleConns = c.MinIdleConns
 	}
-	if c.IdleCheckFrequency != 0 {
-		options.IdleCheckFrequency = time.Duration(c.IdleCheckFrequency) * time.Second
-	}
 	if c.MaxRetryBackoff != 0 {
 		options.MaxRetryBackoff = time.Duration(c.MaxRetryBackoff) * time.Millisecond
 	}
 	client := redis.NewClient(options)
-	_, err := client.Ping().Result()
+	_, err := client.Ping(context.TODO()).Result()
 	return client, err
 }
 
