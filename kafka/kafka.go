@@ -21,6 +21,7 @@ type ProducerConf struct {
 	Ack           int16    `mapstructure:"ack"`
 	ReturnSuccess bool     `mapstructure:"return_success"`
 	ReturnErrors  bool     `mapstructure:"return_errors"`
+	Version       string   `mapstructure:"version"`
 }
 
 type ConsumerGroupConf struct {
@@ -32,6 +33,7 @@ type ConsumerGroupConf struct {
 	AutoCommit   bool          `mapstructure:"auto_commit"`
 	Interval     time.Duration `mapstructure:"interval"`
 	WorkerNum    uint          `mapstructure:"worker_num"`
+	Version      string        `mapstructure:"version"`
 }
 
 type KafkaConf struct {
@@ -135,7 +137,12 @@ func newSyncProducer(conf *ProducerConf) sarama.SyncProducer {
 	config.Producer.Retry.Max = conf.Retry
 	config.Producer.Return.Successes = true // true
 	//config.Producer.Return.Errors = true     // default true
-	if err := config.Validate(); err != nil {
+	version, err := sarama.ParseKafkaVersion(conf.Version)
+	if err != nil {
+		panic(err)
+	}
+	config.Version = version
+	if err = config.Validate(); err != nil {
 		panic(err)
 	}
 
@@ -153,7 +160,12 @@ func newAsyncProducer(conf *ProducerConf) sarama.AsyncProducer {
 	config.Producer.Retry.Max = conf.Retry
 	config.Producer.Return.Successes = conf.ReturnSuccess // true / false
 	config.Producer.Return.Errors = conf.ReturnErrors     // true / false
-	if err := config.Validate(); err != nil {
+	version, err := sarama.ParseKafkaVersion(conf.Version)
+	if err != nil {
+		panic(err)
+	}
+	config.Version = version
+	if err = config.Validate(); err != nil {
 		panic(err)
 	}
 
@@ -189,7 +201,12 @@ func newConsumerGroup(conf *ConsumerGroupConf) sarama.ConsumerGroup {
 	config.Consumer.Offsets.AutoCommit.Enable = conf.AutoCommit // false
 	config.Consumer.Offsets.AutoCommit.Interval = conf.Interval * time.Millisecond
 	config.Consumer.Return.Errors = conf.ReturnErrors // true
-	if err := config.Validate(); err != nil {
+	version, err := sarama.ParseKafkaVersion(conf.Version)
+	if err != nil {
+		panic(err)
+	}
+	config.Version = version
+	if err = config.Validate(); err != nil {
 		panic(err)
 	}
 
